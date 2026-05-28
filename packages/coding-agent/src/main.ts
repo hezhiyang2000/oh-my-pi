@@ -299,7 +299,7 @@ async function runInteractiveMode(
 
 	if (initialMessage !== undefined) {
 		try {
-			await session.prompt(initialMessage, { images: initialImages });
+		await session.prompt(initialMessage, { images: initialImages });
 		} catch (error: unknown) {
 			const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
 			mode.showError(errorMessage);
@@ -308,7 +308,7 @@ async function runInteractiveMode(
 
 	for (const message of initialMessages) {
 		try {
-			await session.prompt(message);
+		await session.prompt(message);
 		} catch (error: unknown) {
 			const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
 			mode.showError(errorMessage);
