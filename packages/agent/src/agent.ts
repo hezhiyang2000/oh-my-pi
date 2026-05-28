@@ -21,6 +21,7 @@ import {
 	type ToolResultMessage,
 } from "@oh-my-pi/pi-ai";
 import { agentLoop, agentLoopContinue } from "./agent-loop";
+import { EventLoopKeepalive } from "./utils/yield";
 import type { AppendOnlyContextManager } from "./append-only-context";
 import type { HarmonyAuditEvent } from "./harmony-leak";
 import type {
@@ -857,7 +858,7 @@ export class Agent {
 		if (!model) throw new Error("No model configured");
 
 		let skipInitialSteeringPoll = options?.skipInitialSteeringPoll === true;
-
+		const keepalive = new EventLoopKeepalive();
 		const { promise, resolve } = Promise.withResolvers<void>();
 		this.#runningPrompt = promise;
 		this.#resolveRunningPrompt = resolve;
@@ -1062,6 +1063,7 @@ export class Agent {
 			this.#state.error = err?.message || String(err);
 			this.#emit({ type: "agent_end", messages: [errorMsg] });
 		} finally {
+			keepalive.dispose();
 			this.#state.isStreaming = false;
 			this.#state.streamMessage = null;
 			this.#state.pendingToolCalls = new Set<string>();
