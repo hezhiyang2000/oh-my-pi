@@ -37,8 +37,10 @@ export class EventLoopKeepalive {
 		// optimizes away no-op timers and may skip the epoll_wait that
 		// they would otherwise trigger.  A microtask forces a proper
 		// event-loop turn with I/O polling.
+		// 100ms interval ensures JSC calculates a short epoll_wait timeout
+		// rather than treating distant deadlines as "no timers pending".
 		queueMicrotask(() => {});
-	}, 1_000);
+	}, 100);
 	[Symbol.dispose](): void {
 		clearInterval(this.#tmr);
 	}
