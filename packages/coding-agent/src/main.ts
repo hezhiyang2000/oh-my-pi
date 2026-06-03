@@ -1006,20 +1006,28 @@ export async function runRootCommand(
 			}
 
 			logger.endTiming();
-			await runInteractiveMode(
-				session,
-				VERSION,
-				changelogMarkdown,
-				notifs,
-				versionCheckPromise,
-				parsedArgs.messages,
-				setToolUIContext,
-				lspServers,
-				mcpManager,
-				eventBus,
-				initialMessage,
-				initialImages,
-			);
+			// Process-level keepalive: prevents Bun JSC busy-wait during the
+			// entire interactive session, including --resume recovery states
+			// that fall outside individual getUserInput/prompt keepalive scopes.
+			const _processKeepalive = setInterval(() => {}, 1_000);
+			try {
+				await runInteractiveMode(
+					session,
+					VERSION,
+					changelogMarkdown,
+					notifs,
+					versionCheckPromise,
+					parsedArgs.messages,
+					setToolUIContext,
+					lspServers,
+					mcpManager,
+					eventBus,
+					initialMessage,
+					initialImages,
+				);
+			} finally {
+				clearInterval(_processKeepalive);
+			}
 		} else {
 			await runPrintMode(session, {
 				mode,
