@@ -32,7 +32,7 @@ import { scheduler } from "node:timers/promises";
 // ---------------------------------------------------------------------------
 
 export class EventLoopKeepalive {
-	#tmr = setInterval(() => {}, 86_400_000);
+	#tmr = setInterval(() => {}, 1_000);
 	[Symbol.dispose](): void {
 		clearInterval(this.#tmr);
 	}
