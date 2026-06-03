@@ -1009,7 +1009,13 @@ export async function runRootCommand(
 			// Process-level keepalive: prevents Bun JSC busy-wait during the
 			// entire interactive session, including --resume recovery states
 			// that fall outside individual getUserInput/prompt keepalive scopes.
-			const _processKeepalive = setInterval(() => {}, 1_000);
+			// Process-level keepalive: prevents Bun JSC busy-wait during the
+			// entire interactive session, including --resume recovery states
+			// that fall outside individual getUserInput/prompt keepalive scopes.
+			// 100ms interval keeps JSC's epoll_wait timeout short; the
+			// queueMicrotask callback forces a proper event-loop turn with
+			// I/O polling rather than being optimized away as a no-op timer.
+			const _processKeepalive = setInterval(() => { queueMicrotask(() => {}); }, 100);
 			try {
 				await runInteractiveMode(
 					session,
