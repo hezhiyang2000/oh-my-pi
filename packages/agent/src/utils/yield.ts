@@ -32,7 +32,13 @@ import { scheduler } from "node:timers/promises";
 // ---------------------------------------------------------------------------
 
 export class EventLoopKeepalive {
-	#tmr = setInterval(() => {}, 1_000);
+	#tmr = setInterval(() => {
+		// The callback body must not be empty: Bun's JSC event loop
+		// optimizes away no-op timers and may skip the epoll_wait that
+		// they would otherwise trigger.  A microtask forces a proper
+		// event-loop turn with I/O polling.
+		queueMicrotask(() => {});
+	}, 1_000);
 	[Symbol.dispose](): void {
 		clearInterval(this.#tmr);
 	}
@@ -83,7 +89,11 @@ async function sleepAtLeast(ms: number, signal?: AbortSignal): Promise<void> {
 export async function yieldIfDue(): Promise<void> {
 	const now = Date.now();
 	if (now - lastYieldAt < YIELD_INTERVAL_MS) return;
-	await sleepAtLeast(YIELD_SLEEP_MS);
+	// Use setTimeout instead of scheduler.wait: on Bun 1.3.x (JSC),
+	// scheduler.wait can return early when napi callbacks fire, causing
+	// sleepAtLeast to spin in a retry loop.  setTimeout creates a real
+	// timerfd that the kernel honors regardless of userspace wakeups.
+	await new Promise<void>(resolve => setTimeout(resolve, YIELD_SLEEP_MS));
 	lastYieldAt = Date.now();
 }
 
